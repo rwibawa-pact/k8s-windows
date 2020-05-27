@@ -1,0 +1,80 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hh-mysql
+  labels:
+    app: hh
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: hh
+    tier: mysql
+  clusterIP: None
+---
+apiVersion: apps/v1 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  name: hh-mysql
+  labels:
+    app: hh
+spec:
+  selector:
+    matchLabels:
+      app: hh
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: hh
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage
+          mountPath: /var/lib/mysql
+        - name: mysql-config
+          mountPath: /etc/mysql/conf.d/
+          readOnly: true
+        livenessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - "-c"
+            - MYSQL_PWD="${MYSQL_ROOT_PASSWORD}"
+            - mysql -h 127.0.0.1 -u root -e "SELECT 1"
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - "-c"
+            - MYSQL_PWD="${MYSQL_ROOT_PASSWORD}"
+            - mysql -h 127.0.0.1 -u root -e "SELECT 1"
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 3
+      volumes:
+      - name: mysql-persistent-storage
+        persistentVolumeClaim:
+          claimName: mysql-pv-claim
+      - name: mysql-config
+        configMap:
+          name: mysql-config

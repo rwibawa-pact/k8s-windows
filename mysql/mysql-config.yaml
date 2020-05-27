@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-config
+data:
+  custom.cnf: |
+    [mysqld]
+    default_storage_engine=innodb
+    skip_external_locking
+    lower_case_table_names=1
+    skip_host_cache
+    skip_name_resolve
+    character_set_server=utf8
+    sql_mode='STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION'
+

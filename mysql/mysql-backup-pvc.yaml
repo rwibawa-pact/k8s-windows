@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: mysqlbackup
+spec:
+  capacity:
+    storage: 930Gi
+  accessModes:
+    - ReadWriteOnce
+  persistentVolumeReclaimPolicy: Recycle
+  nfs:
+    path: /share/backup/db/mysql_bak
+    server: nfs.host
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysqlbackuppvc
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 90Gi

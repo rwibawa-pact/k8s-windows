@@ -1,0 +1,41 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: mysql-backup
+spec:
+  schedule: "0 2 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: mysql-backup
+            imagePullPolicy: IfNotPresent
+            image: mysql:5.6
+            env:
+            - name: MYSQL_BACKUP_USER
+              value: root
+            - name: MYSQL_BACKUP_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-pass
+                  key: password
+            - name: MYSQL_HOST
+              value: hh-mysql
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -ex
+              mysqldump --host=$MYSQL_HOST --user=$MYSQL_BACKUP_USER \
+                        --password=$MYSQL_BACKUP_USER_PASSWORD \
+                        --routines --databases epms --single-transaction \
+                        > /mysql-backup/mysql-`date +"%Y%m%d"`.sql
+            volumeMounts:
+            - name: mysql-backup
+              mountPath: /mysql-backup
+          restartPolicy: OnFailure
+          volumes:
+          - name: mysql-backup
+            persistentVolumeClaim:
+              claimName: mysqlbackuppvc
